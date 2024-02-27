@@ -367,33 +367,136 @@ function group(array, keySelector, valueSelector) {
  *  For more examples see unit tests.
  */
 
+class CssSelectorBuilder {
+  static SELECTORS = Object.freeze({
+    element: {
+      name: 'element',
+      pos: 1,
+      alone: true,
+    },
+    id: {
+      name: 'id',
+      pos: 2,
+      alone: true,
+    },
+    class: {
+      name: 'class',
+      pos: 3,
+      alone: false,
+    },
+    attr: {
+      name: 'attr',
+      pos: 4,
+      alone: false,
+    },
+    pseudo: {
+      name: 'pseudo',
+      pos: 5,
+      alone: false,
+    },
+    pseudoEl: {
+      name: 'pseudoEl',
+      pos: 6,
+      alone: true,
+    },
+  });
+
+  #selectorsText;
+
+  #selectors;
+
+  constructor() {
+    this.#selectorsText = [];
+    this.#selectors = [];
+  }
+
+  #addSelector(selector, selectorText) {
+    if (selector.alone && this.#selectors.some((item) => item === selector)) {
+      throw new Error(
+        'Element, id and pseudo-element should not occur more then one time inside the selector'
+      );
+    }
+    if (this.#selectors.some((item) => item.pos > selector.pos)) {
+      throw new Error(
+        'Selector parts should be arranged in the following order: element, id, class, attribute, pseudo-class, pseudo-element'
+      );
+    }
+    this.#selectorsText.push(selectorText);
+    this.#selectors.push(selector);
+    return this;
+  }
+
+  element(value) {
+    return this.#addSelector(CssSelectorBuilder.SELECTORS.element, value);
+  }
+
+  id(value) {
+    return this.#addSelector(CssSelectorBuilder.SELECTORS.id, `#${value}`);
+  }
+
+  class(value) {
+    return this.#addSelector(CssSelectorBuilder.SELECTORS.class, `.${value}`);
+  }
+
+  attr(value) {
+    return this.#addSelector(CssSelectorBuilder.SELECTORS.attr, `[${value}]`);
+  }
+
+  pseudoClass(value) {
+    return this.#addSelector(CssSelectorBuilder.SELECTORS.pseudo, `:${value}`);
+  }
+
+  pseudoElement(value) {
+    return this.#addSelector(
+      CssSelectorBuilder.SELECTORS.pseudoEl,
+      `::${value}`
+    );
+  }
+
+  stringify() {
+    return this.#selectorsText.join('');
+  }
+
+  static combine(selector1, combinator, selector2) {
+    const newObj = new CssSelectorBuilder();
+    newObj.#selectorsText = selector1.#selectorsText
+      .concat(` ${combinator} `)
+      .concat(selector2.#selectorsText);
+    return newObj;
+  }
+}
+
 const cssSelectorBuilder = {
-  element(/* value */) {
-    throw new Error('Not implemented');
+  element(value) {
+    return new CssSelectorBuilder().element(value);
   },
 
-  id(/* value */) {
-    throw new Error('Not implemented');
+  id(value) {
+    return new CssSelectorBuilder().id(value);
   },
 
-  class(/* value */) {
-    throw new Error('Not implemented');
+  class(value) {
+    return new CssSelectorBuilder().class(value);
   },
 
-  attr(/* value */) {
-    throw new Error('Not implemented');
+  attr(value) {
+    return new CssSelectorBuilder().attr(value);
   },
 
-  pseudoClass(/* value */) {
-    throw new Error('Not implemented');
+  pseudoClass(value) {
+    return new CssSelectorBuilder().pseudoClass(value);
   },
 
-  pseudoElement(/* value */) {
-    throw new Error('Not implemented');
+  pseudoElement(value) {
+    return new CssSelectorBuilder().pseudoElement(value);
   },
 
-  combine(/* selector1, combinator, selector2 */) {
-    throw new Error('Not implemented');
+  combine(selector1, combinator, selector2) {
+    return CssSelectorBuilder.combine(selector1, combinator, selector2);
+  },
+
+  stringify() {
+    return '';
   },
 };
 
